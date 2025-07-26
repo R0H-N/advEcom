@@ -1,89 +1,120 @@
 
-
 ---
 
-````markdown
 # 🛒 Enlog E-Commerce API
 
-A robust and secure backend API for an e-commerce application built with Django and Django REST Framework.  
-Supports user registration, authentication, product listing, order placement, and stock management.
+A robust and secure backend API for an e-commerce application built with Django and Django REST Framework.
+
+This project supports user registration, JWT authentication, product browsing, order placement, and stock management, with admin-only access to product management and full order visibility.
 
 ---
 
 ## ✅ Features
 
-- JWT-based user authentication
-- Admin-only product management (CRUD)
-- Authenticated users can:
-  - View available products
-  - Place orders with multiple items
-  - View their order history
-  - Cancel unpaid orders
-- Admins can view all orders
-- Automatic stock deduction on order placement
+* JWT-based authentication (Login & Token Refresh)
+* Custom user model with additional fields: `address` and `phone`
+* Admin-only product management (CRUD)
+* Authenticated users can:
+
+  * Register and log in
+  * View available products
+  * Place orders (multi-item support)
+  * View and cancel their unpaid orders
+* Stock is automatically reduced when an order is placed
+* Admins can view all orders
 
 ---
 
 ## 🧱 Tech Stack
 
-- Python & Django
-- Django REST Framework
-- SimpleJWT for authentication
-- SQLite / PostgreSQL (configurable)
+| Layer       | Technology                                |
+| ----------- | ----------------------------------------- |
+| Backend     | Django, Django REST Framework             |
+| Auth System | SimpleJWT (Token-based)                   |
+| Database    | SQLite / PostgreSQL (configurable)        |
+| User Model  | CustomUser (extended from `AbstractUser`) |
+
+---
+
+## 👤 User Registration & Authentication
+
+### 🔹 Register
+
+**POST** `/register/`
+
+Registers a new user.
+
+**Request Body:**
+
+```json
+{
+  "username": "john_doe",
+  "email": "john@example.com",
+  "password": "SecurePassword123",
+  "first_name": "John",
+  "last_name": "Doe",
+  "address": "123 Main St, New York",
+  "phone": "+1234567890"
+}
+```
+
+### 🔹 Obtain Token
+
+**POST** `/api/token/`
+
+```json
+{
+  "username": "john_doe",
+  "password": "SecurePassword123"
+}
+```
+
+### 🔹 Refresh Token
+
+**POST** `/api/token/refresh/`
+
+```json
+{
+  "refresh": "<your-refresh-token>"
+}
+```
 
 ---
 
 ## 📦 Product API
 
-### 🔹 List Products  
-`GET /products/`  
-Returns all available products. *(Public)*
+| Action         | Method | Endpoint                 | Access     |
+| -------------- | ------ | ------------------------ | ---------- |
+| List Products  | GET    | `/products/`             | Public     |
+| Product Detail | GET    | `/products/<id>/`        | Public     |
+| Create Product | POST   | `/products/create/`      | Admin only |
+| Update Product | PUT    | `/products/<id>/update/` | Admin only |
+| Delete Product | DELETE | `/products/<id>/delete/` | Admin only |
 
----
+**Product Payload Example (Admin Only):**
 
-### 🔹 Product Detail  
-`GET /products/<id>/`  
-Returns details of a specific product. *(Public)*
-
----
-
-### 🔹 Create Product  
-`POST /products/create/`  
-**Admin only**  
-**Headers:** `Authorization: Bearer <token>`  
-**Body:**
 ```json
 {
-  "name": "Mouse",
-  "description": "Wireless optical mouse",
+  "name": "Wireless Mouse",
+  "description": "Bluetooth optical mouse",
   "price": 699.00,
-  "stock": 20
+  "stock": 25
 }
-````
-
----
-
-### 🔹 Update Product
-
-`PUT /products/<id>/update/`
-**Admin only**
-
----
-
-### 🔹 Delete Product
-
-`DELETE /products/<id>/delete/`
-**Admin only**
+```
 
 ---
 
 ## 🛍️ Order API
 
-### 🔹 Create Order
+| Action          | Method | Endpoint               | Access             |
+| --------------- | ------ | ---------------------- | ------------------ |
+| Create Order    | POST   | `/orders/create/`      | Authenticated user |
+| View My Orders  | GET    | `/orders/my-orders/`   | Authenticated user |
+| Order Detail    | GET    | `/orders/<id>/`        | Authenticated user |
+| Cancel Order    | DELETE | `/orders/<id>/cancel/` | If unpaid          |
+| View All Orders | GET    | `/orders/all/`         | Admin only         |
 
-`POST /orders/create/`
-**Headers:** `Authorization: Bearer <token>`
-**Body:**
+### 🔹 Create Order
 
 ```json
 {
@@ -94,55 +125,18 @@ Returns details of a specific product. *(Public)*
 }
 ```
 
-Automatically deducts ordered quantities from product stock.
+✔ Automatically deducts stock on placement
+❌ Cancelling an order does **not** restore stock
 
 ---
 
-### 🔹 View My Orders
+## 📌 Notes
 
-`GET /orders/my-orders/`
-Lists all orders of the authenticated user.
-
----
-
-### 🔹 Order Detail
-
-`GET /orders/<id>/`
-Returns details of a specific order (owned by the user).
-
----
-
-### 🔹 Cancel Order
-
-`DELETE /orders/<id>/cancel/`
-Allowed only if the order is unpaid and belongs to the requesting user.
-
----
-
-### 🔹 View All Orders
-
-`GET /orders/all/`
-**Admin only**
-Returns a list of all orders in the system.
-
----
-
-## 🔐 Authentication
-
-### Obtain Token
-
-`POST /api/token/`
-
-```json
-{
-  "username": "user1",
-  "password": "securepassword"
-}
-```
-
-### Refresh Token
-
-`POST /api/token/refresh/`
+* Product management is restricted to admin users
+* Stock is reduced **immediately** when an order is placed
+* Order cancellation is allowed **only if unpaid**
+* Order items are linked and created dynamically per order
+* `CustomUser` includes `address` and `phone` fields
 
 ---
 
@@ -159,17 +153,8 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Access API at: `http://localhost:8000/`
-
-Admin panel: `http://localhost:8000/admin/`
-
----
-
-## 📌 Notes
-
-* Product creation, update, and deletion are restricted to admin users.
-* Product stock is reduced immediately upon order placement.
-* Cancelling an order does not restore product stock.
+* Access API: `http://localhost:8000/`
+* Admin Panel: `http://localhost:8000/admin/`
 
 ---
 
